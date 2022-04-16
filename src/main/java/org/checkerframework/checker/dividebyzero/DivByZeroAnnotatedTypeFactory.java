@@ -18,6 +18,21 @@ import java.lang.annotation.Annotation;
 
 import org.checkerframework.checker.dividebyzero.qual.*;
 
+/*
+ *           +---Top-----------+
+ *           |                 |
+ *           |                 |
+ *           |                 |
+ *  +-----Non Zero--+          |
+ *  |               |         Zero
+ *  |               |          |
+ *  |               |          |
+ * Positive     Negative       |
+ *  |               |          |
+ *  |               |          |
+ *  +------------Bottom--------+
+ */
+
 public class DivByZeroAnnotatedTypeFactory extends BaseAnnotatedTypeFactory {
 
     /**
@@ -30,11 +45,21 @@ public class DivByZeroAnnotatedTypeFactory extends BaseAnnotatedTypeFactory {
         switch (literal.getKind()) {
         case INT_LITERAL:
             int intValue = (Integer)literal.getValue();
-            // TODO
+	    if (intValue == 0)
+ 	    	return Zero.class;
+	    else if (intValue > 0)
+		return Pos.class;
+	    else if (intValue < 0)
+		return Neg.class;
             break;
         case LONG_LITERAL:
             long longValue = (Long)literal.getValue();
-            // TODO
+	    if (longValue == 0)
+		return Zero.class;
+	    else if (longValue > 0)
+		return Pos.class;
+	    else if (longValue < 0)
+		return Neg.class;
             break;
         }
         return Top.class;

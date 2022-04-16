@@ -44,6 +44,22 @@ public class DivByZeroTransfer extends CFTransfer {
     // Transfer functions to implement
 
     /**
+     *           +---Top-----------+
+     *           |                 |
+     *           |                 |
+     *           |                 |
+     *  +-----Non Zero--+          |
+     *  |               |         Zero
+     *  |               |          |
+     *  |               |          |
+     * Positive     Negative       |
+     *  |               |          |
+     *  |               |          |
+     *  +------------Bottom--------+
+     */
+
+
+    /**
      * Assuming that a simple comparison (lhs `op` rhs) returns true, this
      * function should refine what we know about the left-hand side (lhs). (The
      * input value "lhs" is always a legal return value, but not a very useful
@@ -71,7 +87,43 @@ public class DivByZeroTransfer extends CFTransfer {
             Comparison operator,
             AnnotationMirror lhs,
             AnnotationMirror rhs) {
-        // TODO
+        if (operator == Comparison.NE) {
+            if (equal(rhs, zero())) return nz();
+            if (equal(rhs, top()))  return top();
+            if (equal(rhs, pos()))  return neg();
+            if (equal(rhs, neg()))  return pos();
+            if (equal(rhs, nz()))   return zero();
+        }
+        if (operator == Comparison.EQ) {
+                return rhs;
+        }
+        if (operator == Comparison.GT) {
+            if (equal(rhs, zero())) return pos();
+            if (equal(rhs, pos()))  return pos();
+            if (equal(rhs, neg()))  return top();
+            if (equal(rhs, nz()))   return top();
+            if (equal(rhs, top()))  return top();
+        }
+        if (operator == Comparison.LT) {
+            if (equal(rhs, zero())) return neg();
+            if (equal(rhs, pos()))  return top();
+            if (equal(rhs, nz()))   return top();
+            if (equal(rhs, neg()))  return neg();
+            if (equal(rhs, top()))  return top();
+        }
+        if (operator == Comparison.LE) {
+            if (equal(rhs, zero())) return top();
+            if (equal(rhs, pos()))  return top();
+            if (equal(rhs, nz()))   return top();
+            if (equal(rhs, neg()))  return neg();
+        }
+        if (operator == Comparison.GE) {
+            if (equal(rhs, zero())) return top();
+            if (equal(rhs, pos()))  return pos();
+            if (equal(rhs, neg()))  return top();
+            if (equal(rhs, nz()))   return top();
+            if (equal(rhs, top()))  return top();
+        }
         return lhs;
     }
 
@@ -89,11 +141,117 @@ public class DivByZeroTransfer extends CFTransfer {
      * @param rhs        the lattice point for the right-hand side of the expression
      * @return the lattice point for the result of the expression
      */
+
+   /**
+     *  .----------.-----.----------.----------.----------.----------.
+     *  |    +     | Top | Positive |   Zero   | Negative | Non Zero |
+     *  :----------+-----+----------+----------+----------+----------:
+     *  | Top      | Top | Top      | Top      | Top      | Top      |
+     *  :----------+-----+----------+----------+----------+----------:
+     *  | Positive | Top | Positive | Positive | Top      | Top      |
+     *  :----------+-----+----------+----------+----------+----------:
+     *  | Zero     | Top | Positive | Zero     | Negative | Non Zero |
+     *  :----------+-----+----------+----------+----------+----------:
+     *  | Negative | Top | Top      | Negative | Negative | Top      |
+     *  :----------+-----+----------+----------+----------+----------:
+     *  | Non Zero | Top | Top      | Non Zero | Top      | Top      |
+     *  '----------'-----'----------'----------'----------'----------'
+     *
+     *  .----------.-----.----------.----------.----------.----------.
+     *  |    -     | Top | Positive |   Zero   | Negative | Non Zero |
+     *  :----------+-----+----------+----------+----------+----------:
+     *  | Top      | Top | Top      | Top      | Top      | Top      |
+     *  :----------+-----+----------+----------+----------+----------:
+     *  | Positive | Top | Top      | Positive | Positive | Top      |
+     *  :----------+-----+----------+----------+----------+----------:
+     *  | Zero     | Top | Negative | Zero     | Positive | Non Zero |
+     *  :----------+-----+----------+----------+----------+----------:
+     *  | Negative | Top | Negative | Negative | Top      | Top      |
+     *  :----------+-----+----------+----------+----------+----------:
+     *  | Non Zero | Top | Top      | Non Zero | Top      | Top      |
+     *  '----------'-----'----------'----------'----------'----------'
+     *
+     *  .----------.------.----------.------.----------.----------.
+     *  |    *     | Top  | Positive | Zero | Negative | Non Zero |
+     *  :----------+------+----------+------+----------+----------:
+     *  | Top      | Top  | Top      | Zero | Top      | Top      |
+     *  :----------+------+----------+------+----------+----------:
+     *  | Positive | Top  | Positive | Zero | Negative | Top      |
+     *  :----------+------+----------+------+----------+----------:
+     *  | Zero     | Zero | Zero     | Zero | Zero     | Zero     |
+     *  :----------+------+----------+------+----------+----------:
+     *  | Negative | Top  | Negative | Zero | Positive | Top      |
+     *  :----------+------+----------+------+----------+----------:
+     *  | Non Zero | Top  | Top      | Zero | Top      | Top      |
+     *  '----------'------'----------'------'----------'----------'
+     * 
+     *  .----------.-------------.----------.-------------.----------.----------.
+     *  |  / or %  |     Top     | Positive |    Zero     | Negative | Non Zero |
+     *  :----------+-------------+----------+-------------+----------+----------:
+     *  | Top      | Top (error) | Top      | Top (error) | Top      | Top      |
+     *  :----------+-------------+----------+-------------+----------+----------:
+     *  | Positive | Top (error) | Positive | Top (error) | Negative | Top      |
+     *  :----------+-------------+----------+-------------+----------+----------:
+     *  | Zero     | Top (error) | Zero     | Top (error) | Zero     | Zero     |
+     *  :----------+-------------+----------+-------------+----------+----------:
+     *  | Negative | Top (error) | Negative | Top (error) | Positive | Top      |
+     *  :----------+-------------+----------+-------------+----------+----------:
+     *  | Non Zero | Top (error) | Top      | Top (error) | Top      | Top      |
+     *  '----------'-------------'----------'-------------'----------'----------'
+     */
+
     private AnnotationMirror arithmeticTransfer(
             BinaryOperator operator,
             AnnotationMirror lhs,
             AnnotationMirror rhs) {
-        // TODO
+        if (operator == BinaryOperator.PLUS){
+            if (equal(lhs, top()) || equal(rhs, top()))                		return top();
+            if (equal(lhs, pos()) && (equal(rhs, pos()) || equal(rhs, zero()))) return pos();
+            if (equal(lhs, pos()) && equal(rhs, neg()))                		return top();
+            if (equal(lhs, pos()) && equal(rhs, nz()))                		return top();
+            if (equal(lhs, zero()))                            			return rhs;
+            if (equal(lhs, neg()) && equal(rhs, pos()))                		return top();
+            if (equal(lhs, neg()) && equal(rhs, neg()))                		return top();
+            if (equal(lhs, neg()) && (equal(rhs, zero()) || equal(rhs, neg()))) return neg();
+            if (equal(lhs, nz())  && equal(rhs, pos()))                		return top();
+            if (equal(lhs, nz())  && equal(rhs, zero()))                	return nz();
+            if (equal(lhs, nz())  && equal(rhs, neg()))                		return top();
+            if (equal(lhs, nz())  && equal(rhs, nz()))                		return top();
+            return top();
+        }
+        if (operator == BinaryOperator.MINUS){
+            if (equal(lhs, top())  || equal(rhs, top()))                 		return top();
+            if (equal(lhs, pos())  && (equal(rhs, neg())  || equal(rhs, zero())))     	return pos();
+            if (equal(lhs, pos())  && equal(rhs, pos()))                		return top();
+            if (equal(lhs, zero()) && equal(rhs, zero()))                		return zero();
+            if (equal(lhs, zero()) && equal(rhs, pos()))                		return neg();
+            if (equal(lhs, zero()) && equal(rhs, neg()))                		return pos();
+            if (equal(lhs, zero()) && equal(rhs, nz()))                			return nz();
+            if (equal(lhs, neg())  && equal(rhs, neg()))                		return top();
+            if (equal(lhs, neg())  && (equal(rhs, zero()) || equal(rhs, pos())))    	return neg();
+            if (equal(lhs, nz())   && equal(rhs, zero()))                		return nz();
+            if (equal(lhs, nz())   || equal(rhs, nz()))                 		return top();
+            return top();
+        }
+        if (operator == BinaryOperator.TIMES){
+            if (equal(lhs, zero()) || equal(rhs, zero()))    return zero();
+            if (equal(lhs, top())  || equal(rhs, top()))     return top();
+            if (equal(lhs, pos())  && equal(rhs, pos()))     return pos();
+            if (equal(lhs, neg())  && equal(rhs, neg()))     return pos();
+            if (equal(lhs, pos())  || equal(rhs, neg()))     return neg();
+            if (equal(lhs, neg())  || equal(rhs, pos()))     return neg();
+            if (equal(lhs, nz())   || equal(rhs, nz()))      return top();
+            return top();
+        }
+        if (operator == BinaryOperator.DIVIDE || operator == BinaryOperator.MOD){
+            if (equal(lhs, top()) || equal(rhs, top()))     return top();
+            if (equal(rhs, zero()))                	    return top();
+            if (equal(lhs, zero()))                	    return zero();
+            if (equal(lhs, pos()) || equal(rhs, neg()))     return neg();
+            if (equal(lhs, neg()) || equal(rhs, pos()))     return neg();
+            if (equal(lhs, nz())  || equal(rhs, nz()))      return top();
+            return top();
+        }
         return top();
     }
 
@@ -108,6 +266,22 @@ public class DivByZeroTransfer extends CFTransfer {
     /** Get the bottom of the lattice */
     private AnnotationMirror bottom() {
         return analysis.getTypeFactory().getQualifierHierarchy().getBottomAnnotations().iterator().next();
+    }
+    
+    private AnnotationMirror zero() {
+	    return reflect(Zero.class);
+    }
+
+    private AnnotationMirror pos() {
+	    return reflect(Pos.class);
+    }
+
+    private AnnotationMirror neg() {
+	    return reflect(Neg.class);
+    }
+
+    private AnnotationMirror nz() {
+	    return reflect(NZ.class);
     }
 
     /** Compute the least-upper-bound of two points in the lattice */

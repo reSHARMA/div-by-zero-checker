@@ -21,6 +21,43 @@ public class DivByZeroVisitor extends BaseTypeVisitor<DivByZeroAnnotatedTypeFact
         /* x %  y */ Tree.Kind.REMAINDER,
         /* x %= y */ Tree.Kind.REMAINDER_ASSIGNMENT);
 
+    private void debugPrint(BinaryTree node){
+	    System.out.println(node);
+	    if(hasAnnotation(node.getLeftOperand(), Top.class))
+	    	System.out.println("Top ");
+	    if(hasAnnotation(node.getLeftOperand(), Zero.class))
+	    	System.out.println("Zero ");
+	    if(hasAnnotation(node.getLeftOperand(), Pos.class))
+	    	System.out.println("Pos ");
+	    if(hasAnnotation(node.getLeftOperand(), Neg.class))
+	    	System.out.println("Neg ");
+	    if(hasAnnotation(node.getLeftOperand(), NZ.class))
+	    	System.out.println("NZ ");
+	    if(hasAnnotation(node.getRightOperand(), Top.class))
+	    	System.out.println(" = Top ");
+	    if(hasAnnotation(node.getRightOperand(), Zero.class))
+	    	System.out.println("= Zero ");
+	    if(hasAnnotation(node.getRightOperand(), Pos.class))
+	    	System.out.println("= Pos ");
+	    if(hasAnnotation(node.getRightOperand(), Neg.class))
+	    	System.out.println("= Neg ");
+	    if(hasAnnotation(node.getRightOperand(), NZ.class))
+	    	System.out.println("= NZ ");
+    }
+    private void debugPrint1(CompoundAssignmentTree node){
+	    System.out.println(node);
+	    if(hasAnnotation(node.getExpression(), Top.class))
+	    	System.out.println("Top ");
+	    if(hasAnnotation(node.getExpression(), Zero.class))
+	    	System.out.println("Zero ");
+	    if(hasAnnotation(node.getExpression(), Pos.class))
+	    	System.out.println("Pos ");
+	    if(hasAnnotation(node.getExpression(), Neg.class))
+	    	System.out.println("Neg ");
+	    if(hasAnnotation(node.getExpression(), NZ.class))
+	    	System.out.println("NZ ");
+    }
+
     /**
      * Determine whether to report an error at the given binary AST node.
      * The error text is defined in the messages.properties file.
@@ -29,7 +66,14 @@ public class DivByZeroVisitor extends BaseTypeVisitor<DivByZeroAnnotatedTypeFact
      */
     private boolean errorAt(BinaryTree node) {
         // A BinaryTree can represent any binary operator, including + or -.
-        // TODO
+	if (node.getKind() == Tree.Kind.DIVIDE || node.getKind() == Tree.Kind.REMAINDER) {
+		if (hasAnnotation(node.getRightOperand(), Top.class)){
+			return true;
+		}
+		if (hasAnnotation(node.getRightOperand(), Zero.class)){
+			return true;
+		}
+	}
         return false;
     }
 
@@ -42,7 +86,13 @@ public class DivByZeroVisitor extends BaseTypeVisitor<DivByZeroAnnotatedTypeFact
     private boolean errorAt(CompoundAssignmentTree node) {
         // A CompoundAssignmentTree represents any binary operator combined with an assignment,
         // such as "x += 10".
-        // TODO
+	if (node.getKind() == Tree.Kind.DIVIDE_ASSIGNMENT || node.getKind() == Tree.Kind.REMAINDER_ASSIGNMENT)
+		if (hasAnnotation(node.getExpression(), Top.class)){
+			return true;
+    		}	
+		if (hasAnnotation(node.getExpression(), Zero.class)){
+			return true;
+		}
         return false;
     }
 
