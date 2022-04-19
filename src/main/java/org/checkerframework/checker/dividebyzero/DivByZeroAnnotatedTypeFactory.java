@@ -18,20 +18,31 @@ import java.lang.annotation.Annotation;
 
 import org.checkerframework.checker.dividebyzero.qual.*;
 
-/*
- *           +---Top-----------+
- *           |                 |
- *           |                 |
- *           |                 |
- *  +-----Non Zero--+          |
- *  |               |         Zero
- *  |               |          |
- *  |               |          |
- * Positive     Negative       |
- *  |               |          |
- *  |               |          |
- *  +------------Bottom--------+
- */
+/**
+  *	            Top
+  *	           * * *         
+  *	         *   *   *       
+  *	       *     *     *     
+  *	     *       *       *   
+  *	   *         *         * 
+  *	Pos Zero  Non Zero   Neg Zero
+  *	  **       * * *       **
+  *	  *  *   *   *   *   *  *
+  *	  *    *     *     *    *
+  *	  *  *   *   *   *   *  *
+  *	  **       * * *       **
+  *	Positive   Zero      Negative
+  *	   *         *         * 
+  *	     *       *       *   
+  *	       *     *     *     
+  *	         *   *   *       
+  *	           * * *         
+  *	          Bottom
+  *
+  *
+  * Pos Zero => set of positive integers + zero
+  * Neg Zero => set of negative integers + zero
+  */
 
 public class DivByZeroAnnotatedTypeFactory extends BaseAnnotatedTypeFactory {
 

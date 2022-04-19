@@ -43,21 +43,31 @@ public class DivByZeroTransfer extends CFTransfer {
     // ========================================================================
     // Transfer functions to implement
 
-    /**
-     *           +---Top-----------+
-     *           |                 |
-     *           |                 |
-     *           |                 |
-     *  +-----Non Zero--+          |
-     *  |               |         Zero
-     *  |               |          |
-     *  |               |          |
-     * Positive     Negative       |
-     *  |               |          |
-     *  |               |          |
-     *  +------------Bottom--------+
+   /**
+     *	            Top
+     *	           * * *         
+     *	         *   *   *       
+     *	       *     *     *     
+     *	     *       *       *   
+     *	   *         *         * 
+     *	Pos Zero  Non Zero   Neg Zero
+     *	  **       * * *       **
+     *	  *  *   *   *   *   *  *
+     *	  *    *     *     *    *
+     *	  *  *   *   *   *   *  *
+     *	  **       * * *       **
+     *	Positive   Zero      Negative
+     *	   *         *         * 
+     *	     *       *       *   
+     *	       *     *     *     
+     *	         *   *   *       
+     *	           * * *         
+     *	          Bottom
+     *
+     *
+     * Pos Zero => set of positive integers + zero
+     * Neg Zero => set of negative integers + zero
      */
-
 
     /**
      * Assuming that a simple comparison (lhs `op` rhs) returns true, this
@@ -93,6 +103,8 @@ public class DivByZeroTransfer extends CFTransfer {
             if (equal(rhs, pos()))  return neg();
             if (equal(rhs, neg()))  return pos();
             if (equal(rhs, nz()))   return zero();
+            if (equal(rhs, posz())) return neg();
+            if (equal(rhs, negz())) return pos();
         }
         if (operator == Comparison.EQ) {
                 return rhs;
@@ -100,25 +112,25 @@ public class DivByZeroTransfer extends CFTransfer {
         if (operator == Comparison.GT) {
             if (equal(rhs, zero())) return pos();
             if (equal(rhs, pos()))  return pos();
-            if (equal(rhs, neg()))  return top();
+            if (equal(rhs, neg()))  return posz();
             if (equal(rhs, nz()))   return top();
             if (equal(rhs, top()))  return top();
         }
         if (operator == Comparison.LT) {
             if (equal(rhs, zero())) return neg();
-            if (equal(rhs, pos()))  return top();
+            if (equal(rhs, pos()))  return negz();
             if (equal(rhs, nz()))   return top();
             if (equal(rhs, neg()))  return neg();
             if (equal(rhs, top()))  return top();
         }
         if (operator == Comparison.LE) {
-            if (equal(rhs, zero())) return top();
+            if (equal(rhs, zero())) return negz();
             if (equal(rhs, pos()))  return top();
             if (equal(rhs, nz()))   return top();
             if (equal(rhs, neg()))  return neg();
         }
         if (operator == Comparison.GE) {
-            if (equal(rhs, zero())) return top();
+            if (equal(rhs, zero())) return posz();
             if (equal(rhs, pos()))  return pos();
             if (equal(rhs, neg()))  return top();
             if (equal(rhs, nz()))   return top();
@@ -143,61 +155,78 @@ public class DivByZeroTransfer extends CFTransfer {
      */
 
    /**
-     *  .----------.-----.----------.----------.----------.----------.
-     *  |    +     | Top | Positive |   Zero   | Negative | Non Zero |
-     *  :----------+-----+----------+----------+----------+----------:
-     *  | Top      | Top | Top      | Top      | Top      | Top      |
-     *  :----------+-----+----------+----------+----------+----------:
-     *  | Positive | Top | Positive | Positive | Top      | Top      |
-     *  :----------+-----+----------+----------+----------+----------:
-     *  | Zero     | Top | Positive | Zero     | Negative | Non Zero |
-     *  :----------+-----+----------+----------+----------+----------:
-     *  | Negative | Top | Top      | Negative | Negative | Top      |
-     *  :----------+-----+----------+----------+----------+----------:
-     *  | Non Zero | Top | Top      | Non Zero | Top      | Top      |
-     *  '----------'-----'----------'----------'----------'----------'
+     *  .----------.-----.----------.----------.----------.----------.----------.----------.
+     *  |    +     | Top | Positive |   Zero   | Negative | Non Zero | Pos Zero | Neg Zero |
+     *  :----------+-----+----------+----------+----------+----------+----------+----------:
+     *  | Top      | Top | Top      | Top      | Top      | Top      | Top      | Top      |
+     *  :----------+-----+----------+----------+----------+----------+----------+----------:
+     *  | Positive | Top | Positive | Positive | Top      | Top      | Positive | Top      |
+     *  :----------+-----+----------+----------+----------+----------+----------+----------:
+     *  | Zero     | Top | Positive | Zero     | Negative | Non Zero | Pos Zero | Neg Zero |
+     *  :----------+-----+----------+----------+----------+----------+----------+----------:
+     *  | Negative | Top | Top      | Negative | Negative | Top      | Top      | Negative |
+     *  :----------+-----+----------+----------+----------+----------+----------+----------:
+     *  | Non Zero | Top | Top      | Non Zero | Top      | Top      | Top      | Top      |
+     *  :----------+-----+----------+----------+----------+----------+----------+----------:
+     *  | Pos Zero | Top | Pos      | Pos Zero | Top      | Top      | Pos Zero | Top      |
+     *  :----------+-----+----------+----------+----------+----------+----------+----------:
+     *  | Neg Zero | Top | Top      | Neg Zero | Neg      | Top      | Top      | Neg Zero |
+     *  '----------'-----'----------'----------'----------'----------'----------'----------'
      *
-     *  .----------.-----.----------.----------.----------.----------.
-     *  |    -     | Top | Positive |   Zero   | Negative | Non Zero |
-     *  :----------+-----+----------+----------+----------+----------:
-     *  | Top      | Top | Top      | Top      | Top      | Top      |
-     *  :----------+-----+----------+----------+----------+----------:
-     *  | Positive | Top | Top      | Positive | Positive | Top      |
-     *  :----------+-----+----------+----------+----------+----------:
-     *  | Zero     | Top | Negative | Zero     | Positive | Non Zero |
-     *  :----------+-----+----------+----------+----------+----------:
-     *  | Negative | Top | Negative | Negative | Top      | Top      |
-     *  :----------+-----+----------+----------+----------+----------:
-     *  | Non Zero | Top | Top      | Non Zero | Top      | Top      |
-     *  '----------'-----'----------'----------'----------'----------'
+     *  .----------.-----.----------.----------.----------.----------.----------.----------.
+     *  |    -     | Top | Positive |   Zero   | Negative | Non Zero | Pos Zero | Neg Zero |
+     *  :----------+-----+----------+----------+----------+----------+----------+----------:
+     *  | Top      | Top | Top      | Top      | Top      | Top      | Top      | Top      |
+     *  :----------+-----+----------+----------+----------+----------+----------+----------:
+     *  | Positive | Top | Top      | Positive | Positive | Top      | Top      | Positive |
+     *  :----------+-----+----------+----------+----------+----------+----------+----------:
+     *  | Zero     | Top | Negative | Zero     | Positive | Non Zero | Neg Zero | Pos Zero |
+     *  :----------+-----+----------+----------+----------+----------+----------+----------:
+     *  | Negative | Top | Negative | Negative | Top      | Top      | Negative | Top      |
+     *  :----------+-----+----------+----------+----------+----------+----------+----------:
+     *  | Non Zero | Top | Top      | Non Zero | Top      | Top      | Top      | Top      |
+     *  :----------+-----+----------+----------+----------+----------+----------+----------:
+     *  | Pos Zero | Top | Top      | Pos Zero | Positive | Top      | Top      | Pos Zero |
+     *  :----------+-----+----------+----------+----------+----------+----------+----------:
+     *  | Neg Zero | Top | Negative | Neg Zero | Top      | Top      | Neg Zero | Top      |
+     *  '----------'-----'----------'----------'----------'----------+----------+----------:
      *
-     *  .----------.------.----------.------.----------.----------.
-     *  |    *     | Top  | Positive | Zero | Negative | Non Zero |
-     *  :----------+------+----------+------+----------+----------:
-     *  | Top      | Top  | Top      | Zero | Top      | Top      |
-     *  :----------+------+----------+------+----------+----------:
-     *  | Positive | Top  | Positive | Zero | Negative | Top      |
-     *  :----------+------+----------+------+----------+----------:
-     *  | Zero     | Zero | Zero     | Zero | Zero     | Zero     |
-     *  :----------+------+----------+------+----------+----------:
-     *  | Negative | Top  | Negative | Zero | Positive | Top      |
-     *  :----------+------+----------+------+----------+----------:
-     *  | Non Zero | Top  | Top      | Zero | Top      | Top      |
-     *  '----------'------'----------'------'----------'----------'
+     *
+     *  .----------.------.----------.------.----------.----------.----------.----------.
+     *  |    *     | Top  | Positive | Zero | Negative | Non Zero | Pos Zero | Neg Zero |
+     *  :----------+------+----------+------+----------+----------+----------+----------:
+     *  | Top      | Top  | Top      | Zero | Top      | Top      | Top      | Top      |
+     *  :----------+------+----------+------+----------+----------+----------+----------:
+     *  | Positive | Top  | Positive | Zero | Negative | Top      | Pos Zero | Neg Zero |
+     *  :----------+------+----------+------+----------+----------+----------+----------:
+     *  | Zero     | Zero | Zero     | Zero | Zero     | Zero     | Zero     | Zero     |
+     *  :----------+------+----------+------+----------+----------+----------+----------:
+     *  | Negative | Top  | Negative | Zero | Positive | Top      | Neg Zero | Pos Zero |
+     *  :----------+------+----------+------+----------+----------+----------+----------:
+     *  | Non Zero | Top  | Top      | Zero | Top      | Top      | Top      | Top      |
+     *  :----------+------+----------+------+----------+----------+----------+----------:
+     *  | Pos Zero | Top  | Pos Zero | Zero | Neg Zero | Top      | Pos Zero | Neg Zero |
+     *  :----------+------+----------+------+----------+----------+----------+----------:
+     *  | Neg Zero | Top  | Neg Zero | Zero | Pos Zero | Top      | Neg Zero | Pos Zero |
+     *  '----------'------'----------'------'----------'----------'----------'----------'
      * 
-     *  .----------.-------------.----------.-------------.----------.----------.
-     *  |  / or %  |     Top     | Positive |    Zero     | Negative | Non Zero |
-     *  :----------+-------------+----------+-------------+----------+----------:
-     *  | Top      | Top (error) | Top      | Top (error) | Top      | Top      |
-     *  :----------+-------------+----------+-------------+----------+----------:
-     *  | Positive | Top (error) | Positive | Top (error) | Negative | Top      |
-     *  :----------+-------------+----------+-------------+----------+----------:
-     *  | Zero     | Top (error) | Zero     | Top (error) | Zero     | Zero     |
-     *  :----------+-------------+----------+-------------+----------+----------:
-     *  | Negative | Top (error) | Negative | Top (error) | Positive | Top      |
-     *  :----------+-------------+----------+-------------+----------+----------:
-     *  | Non Zero | Top (error) | Top      | Top (error) | Top      | Top      |
-     *  '----------'-------------'----------'-------------'----------'----------'
+     *  .----------.-------------.----------.-------------.----------.----------.-------------.--------------.
+     *  |  / or %  |     Top     | Positive |    Zero     | Negative | Non Zero | Pos Zero    |  Neg Zero    |
+     *  :----------+-------------+----------+-------------+----------+----------+-------------+--------------:
+     *  | Top      | Top (error) | Top      | Top (error) | Top      | Top      | Top (error) |  Top (error) |
+     *  :----------+-------------+----------+-------------+----------+----------+-------------+--------------:
+     *  | Positive | Top (error) | Positive | Top (error) | Negative | Top      | Top (error) |  Top (error) |
+     *  :----------+-------------+----------+-------------+----------+----------+-------------+--------------:
+     *  | Zero     | Top (error) | Zero     | Top (error) | Zero     | Zero     | Top (error) |  Top (error) |
+     *  :----------+-------------+----------+-------------+----------+----------+-------------+--------------:
+     *  | Negative | Top (error) | Negative | Top (error) | Positive | Top      | Top (error) |  Top (error) |
+     *  :----------+-------------+----------+-------------+----------+----------+-------------+--------------:
+     *  | Non Zero | Top (error) | Top      | Top (error) | Top      | Top      | Top (error) |  Top (error) |
+     *  :----------+-------------+----------+-------------+----------+----------+-------------+--------------:
+     *  | Pos Zero | Top (error) | Pos Zero | Top (error) | Neg Zero | Top      | Top (error) |  Top (error) |
+     *  :----------+-------------+----------+-------------+----------+----------+-------------+--------------:
+     *  | Neg Zero | Top (error) | Neg Zero | Top (error) | Pos Zero | Top      | Top (error) |  Top (error) |
+     *  '----------'-------------'----------'-------------'----------'----------'----------------------------'
      */
 
     private AnnotationMirror arithmeticTransfer(
@@ -206,47 +235,132 @@ public class DivByZeroTransfer extends CFTransfer {
             AnnotationMirror rhs) {
         if (operator == BinaryOperator.PLUS){
             if (equal(lhs, top()) || equal(rhs, top()))                		return top();
+
             if (equal(lhs, pos()) && (equal(rhs, pos()) || equal(rhs, zero()))) return pos();
             if (equal(lhs, pos()) && equal(rhs, neg()))                		return top();
             if (equal(lhs, pos()) && equal(rhs, nz()))                		return top();
+            if (equal(lhs, pos()) && equal(rhs, posz()))                	return pos();
+            if (equal(lhs, pos()) && equal(rhs, negz()))                	return top();
+
             if (equal(lhs, zero()))                            			return rhs;
+
             if (equal(lhs, neg()) && equal(rhs, pos()))                		return top();
             if (equal(lhs, neg()) && equal(rhs, neg()))                		return top();
             if (equal(lhs, neg()) && (equal(rhs, zero()) || equal(rhs, neg()))) return neg();
+            if (equal(lhs, neg()) && equal(rhs, negz()))                	return negz();
+            if (equal(lhs, neg()) && equal(rhs, pos()))                		return top();
+
             if (equal(lhs, nz())  && equal(rhs, pos()))                		return top();
             if (equal(lhs, nz())  && equal(rhs, zero()))                	return nz();
             if (equal(lhs, nz())  && equal(rhs, neg()))                		return top();
             if (equal(lhs, nz())  && equal(rhs, nz()))                		return top();
+            if (equal(lhs, nz())  && equal(rhs, posz()))                	return top();
+            if (equal(lhs, nz())  && equal(rhs, negz()))                	return top();
+	    
+	    if (equal(lhs, negz())  && equal(rhs, pos()))                	return top();
+            if (equal(lhs, negz())  && equal(rhs, zero()))                	return negz();
+            if (equal(lhs, negz())  && equal(rhs, neg()))                	return neg();
+            if (equal(lhs, negz())  && equal(rhs, nz()))                	return top();
+            if (equal(lhs, negz())  && equal(rhs, posz()))                	return top();
+            if (equal(lhs, negz())  && equal(rhs, negz()))                	return negz();
+
+	    if (equal(lhs, posz())  && equal(rhs, pos()))                	return pos();
+            if (equal(lhs, posz())  && equal(rhs, zero()))                	return posz();
+            if (equal(lhs, posz())  && equal(rhs, neg()))                	return top();
+            if (equal(lhs, posz())  && equal(rhs, nz()))                	return top();
+            if (equal(lhs, posz())  && equal(rhs, posz()))                	return posz();
+            if (equal(lhs, posz())  && equal(rhs, negz()))                	return top();
+
             return top();
         }
+
         if (operator == BinaryOperator.MINUS){
             if (equal(lhs, top())  || equal(rhs, top()))                 		return top();
+
             if (equal(lhs, pos())  && (equal(rhs, neg())  || equal(rhs, zero())))     	return pos();
+            if (equal(lhs, pos())  && equal(rhs, negz()))			     	return pos();
             if (equal(lhs, pos())  && equal(rhs, pos()))                		return top();
+            if (equal(lhs, pos())  && equal(rhs, posz()))                		return top();
+
             if (equal(lhs, zero()) && equal(rhs, zero()))                		return zero();
             if (equal(lhs, zero()) && equal(rhs, pos()))                		return neg();
             if (equal(lhs, zero()) && equal(rhs, neg()))                		return pos();
             if (equal(lhs, zero()) && equal(rhs, nz()))                			return nz();
+            if (equal(lhs, zero()) && equal(rhs, posz()))                		return negz();
+            if (equal(lhs, zero()) && equal(rhs, negz()))                		return posz();
+
             if (equal(lhs, neg())  && equal(rhs, neg()))                		return top();
             if (equal(lhs, neg())  && (equal(rhs, zero()) || equal(rhs, pos())))    	return neg();
+            if (equal(lhs, neg())  && equal(rhs, posz()))			    	return neg();
+            if (equal(lhs, neg())  && equal(rhs, negz()))                		return top();
+
             if (equal(lhs, nz())   && equal(rhs, zero()))                		return nz();
             if (equal(lhs, nz())   || equal(rhs, nz()))                 		return top();
+ 
+	    if (equal(lhs, negz())  && equal(rhs, pos()))                		return neg();
+            if (equal(lhs, negz())  && equal(rhs, zero()))                		return negz();
+            if (equal(lhs, negz())  && equal(rhs, neg()))                		return top();
+            if (equal(lhs, negz())  && equal(rhs, nz()))                		return top();
+            if (equal(lhs, negz())  && equal(rhs, posz()))                		return negz();
+            if (equal(lhs, negz())  && equal(rhs, negz()))                		return top();
+
+	    if (equal(lhs, posz())  && equal(rhs, pos()))                		return top();
+            if (equal(lhs, posz())  && equal(rhs, zero()))                		return posz();
+            if (equal(lhs, posz())  && equal(rhs, neg()))                		return pos();
+            if (equal(lhs, posz())  && equal(rhs, nz()))                		return top();
+            if (equal(lhs, posz())  && equal(rhs, posz()))                		return top();
+            if (equal(lhs, posz())  && equal(rhs, negz()))                		return posz();
+
             return top();
         }
+
         if (operator == BinaryOperator.TIMES){
-            if (equal(lhs, zero()) || equal(rhs, zero()))    return zero();
-            if (equal(lhs, top())  || equal(rhs, top()))     return top();
-            if (equal(lhs, pos())  && equal(rhs, pos()))     return pos();
-            if (equal(lhs, neg())  && equal(rhs, neg()))     return pos();
-            if (equal(lhs, pos())  || equal(rhs, neg()))     return neg();
-            if (equal(lhs, neg())  || equal(rhs, pos()))     return neg();
-            if (equal(lhs, nz())   || equal(rhs, nz()))      return top();
+            if (equal(lhs, zero()) || equal(rhs, zero()))    			return zero();
+            if (equal(lhs, top())  || equal(rhs, top()))     			return top();
+
+            if (equal(lhs, pos()) && equal(rhs, pos()))                		return pos();
+            if (equal(lhs, pos()) && equal(rhs, neg()))                		return neg();
+            if (equal(lhs, pos()) && equal(rhs, nz()))                		return top();
+            if (equal(lhs, pos()) && equal(rhs, posz()))                	return posz();
+            if (equal(lhs, pos()) && equal(rhs, negz()))                	return negz();
+
+            if (equal(lhs, neg()) && equal(rhs, pos()))                		return neg();
+            if (equal(lhs, neg()) && equal(rhs, neg()))                		return pos();
+            if (equal(lhs, neg()) && equal(rhs, nz()))                		return top();
+            if (equal(lhs, neg()) && equal(rhs, negz()))                	return posz();
+            if (equal(lhs, neg()) && equal(rhs, pos()))                		return negz();
+
+            if (equal(lhs, nz())  && equal(rhs, pos()))                		return top();
+            if (equal(lhs, nz())  && equal(rhs, neg()))                		return top();
+            if (equal(lhs, nz())  && equal(rhs, nz()))                		return top();
+            if (equal(lhs, nz())  && equal(rhs, posz()))                	return top();
+            if (equal(lhs, nz())  && equal(rhs, negz()))                	return top();
+	    
+	    if (equal(lhs, negz())  && equal(rhs, pos()))                	return negz();
+            if (equal(lhs, negz())  && equal(rhs, neg()))                	return posz();
+            if (equal(lhs, negz())  && equal(rhs, nz()))                	return top();
+            if (equal(lhs, negz())  && equal(rhs, posz()))                	return negz();
+            if (equal(lhs, negz())  && equal(rhs, negz()))                	return posz();
+
+	    if (equal(lhs, posz())  && equal(rhs, pos()))                	return posz();
+            if (equal(lhs, posz())  && equal(rhs, neg()))                	return negz();
+            if (equal(lhs, posz())  && equal(rhs, nz()))                	return top();
+            if (equal(lhs, posz())  && equal(rhs, posz()))                	return posz();
+            if (equal(lhs, posz())  && equal(rhs, negz()))                	return negz();
+
             return top();
         }
+ 
         if (operator == BinaryOperator.DIVIDE || operator == BinaryOperator.MOD){
             if (equal(lhs, top()) || equal(rhs, top()))     return top();
             if (equal(rhs, zero()))                	    return top();
+            if (equal(rhs, posz()))                	    return top();
+            if (equal(rhs, negz()))                	    return top();
             if (equal(lhs, zero()))                	    return zero();
+            if (equal(lhs, posz()) && equal(rhs, pos()))    return posz();
+            if (equal(lhs, posz()) && equal(rhs, neg()))    return negz();
+            if (equal(lhs, negz()) && equal(rhs, pos()))    return negz();
+            if (equal(lhs, negz()) && equal(rhs, neg()))    return posz();
             if (equal(lhs, pos()) || equal(rhs, neg()))     return neg();
             if (equal(lhs, neg()) || equal(rhs, pos()))     return neg();
             if (equal(lhs, nz())  || equal(rhs, nz()))      return top();
@@ -278,6 +392,14 @@ public class DivByZeroTransfer extends CFTransfer {
 
     private AnnotationMirror neg() {
 	    return reflect(Neg.class);
+    }
+    
+    private AnnotationMirror posz() {
+	    return reflect(PosZ.class);
+    }
+
+    private AnnotationMirror negz() {
+	    return reflect(NegZ.class);
     }
 
     private AnnotationMirror nz() {

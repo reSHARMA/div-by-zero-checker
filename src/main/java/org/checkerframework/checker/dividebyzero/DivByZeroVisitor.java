@@ -73,6 +73,12 @@ public class DivByZeroVisitor extends BaseTypeVisitor<DivByZeroAnnotatedTypeFact
 		if (hasAnnotation(node.getRightOperand(), Zero.class)){
 			return true;
 		}
+		if (hasAnnotation(node.getRightOperand(), PosZ.class)){
+			return true;
+		}
+		if (hasAnnotation(node.getRightOperand(), NegZ.class)){
+			return true;
+		}
 	}
         return false;
     }
@@ -91,6 +97,12 @@ public class DivByZeroVisitor extends BaseTypeVisitor<DivByZeroAnnotatedTypeFact
 			return true;
     		}	
 		if (hasAnnotation(node.getExpression(), Zero.class)){
+			return true;
+		}
+		if (hasAnnotation(node.getExpression(), PosZ.class)){
+			return true;
+		}
+		if (hasAnnotation(node.getExpression(), NegZ.class)){
 			return true;
 		}
         return false;
